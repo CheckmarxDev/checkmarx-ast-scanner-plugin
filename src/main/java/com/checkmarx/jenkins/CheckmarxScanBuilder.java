@@ -11,6 +11,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.*;
 import hudson.model.*;
 import hudson.security.ACL;
+import hudson.tasks.ArtifactArchiver;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
@@ -271,9 +272,26 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
             return;
         }
 
-        //----------Integration with the wrapper------------
-        PluginUtils.submitScanDetailsToWrapper(scanConfig, checkmarxCliExecutable, log);
+        if (run.getActions(CheckmarxScanResultsAction.class).isEmpty()) {
+            run.addAction(new CheckmarxScanResultsAction(run));
+        }
 
+        //----------Integration with the wrapper------------
+//        boolean result = PluginUtils.submitScanDetailsToWrapper(scanConfig, checkmarxCliExecutable, log);
+        boolean result = true;
+
+        if(result)
+        {
+            PluginUtils.generateHTMLReport(workspace);
+            ArtifactArchiver artifactArchiver = new ArtifactArchiver(PluginUtils.CHECKMARX_AST_RESULTS_HTML);
+            artifactArchiver.perform(run, workspace, launcher, listener);
+
+            run.setResult(Result.SUCCESS);
+            return;
+        }else {
+            run.setResult(Result.FAILURE);
+            return;
+        }
     }
 
     private void printConfiguration(ScanConfig scanConfig, CxLoggerAdapter log) {

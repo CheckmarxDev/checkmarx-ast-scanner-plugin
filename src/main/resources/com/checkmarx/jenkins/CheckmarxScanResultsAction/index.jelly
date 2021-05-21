@@ -1,0 +1,21 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:l="/lib/layout" xmlns:st="jelly:stapler">
+    <l:layout title="Checkmarx Scan Results">
+
+        <l:side-panel>
+            <st:include page="sidepanel.jelly" it="${it.run}" optional="true"/>
+        </l:side-panel>
+
+        <l:main-panel>
+
+            <h3>Checkmarx Scan Results</h3>
+            <j:forEach var="artifact" items="${it.run.artifacts}">
+                <j:if test="${artifact.toString().indexOf('checkmarx-ast-results.html') != -1}">
+                    <iframe width="95%" height="700" id="reportsFrame" frameborder="1" src="../artifact/${artifact}"/>
+                    <br/>
+                </j:if>
+            </j:forEach>
+
+        </l:main-panel>
+    </l:layout>
+</j:jelly>
