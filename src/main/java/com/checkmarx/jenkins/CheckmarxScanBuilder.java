@@ -283,7 +283,7 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
         if(result)
         {
             PluginUtils.generateHTMLReport(workspace);
-            ArtifactArchiver artifactArchiver = new ArtifactArchiver(PluginUtils.CHECKMARX_AST_RESULTS_HTML);
+            ArtifactArchiver artifactArchiver = new ArtifactArchiver(workspace.getName() + "_" + PluginUtils.CHECKMARX_AST_RESULTS_HTML);
             artifactArchiver.perform(run, workspace, launcher, listener);
 
             run.setResult(Result.SUCCESS);

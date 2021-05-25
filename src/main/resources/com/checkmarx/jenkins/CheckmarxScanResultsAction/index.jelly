@@ -11,7 +11,7 @@
             <h3>Checkmarx Scan Results</h3>
             <j:forEach var="artifact" items="${it.run.artifacts}">
                 <j:if test="${artifact.toString().indexOf('checkmarx-ast-results.html') != -1}">
-                    <iframe width="95%" height="700" id="reportsFrame" frameborder="1" src="../artifact/${artifact}"/>
+                    <iframe width="100%" height="700" id="reportsFrame" src="../artifact/${artifact}"/>
                     <br/>
                 </j:if>
             </j:forEach>

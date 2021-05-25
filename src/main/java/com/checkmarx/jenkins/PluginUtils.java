@@ -129,22 +129,11 @@ public class PluginUtils {
     }
 
     public static void generateHTMLReport(FilePath workspace) throws IOException, InterruptedException {
-        final String reportName = null;
+        String htmlData = getHtmlText();
 
-        //read json
-        final InputStream inputStream = PluginUtils.class.getClassLoader().getResourceAsStream("ast-results.json");
-        String inputJson = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+        String finalHtmlReport = modifyHeadSection(htmlData);
 
-        //parse JSON to HTML
-        String htmlData = PluginUtils.getHtmlData(inputJson.toString());
-
-        //save HTML report file
-        workspace.child(CHECKMARX_AST_RESULTS_HTML).write(htmlData, UTF_8.name());
-        String htmlReport = workspace.child("checkmarx-ast-results.html").readToString();
-        String modifiedHtmlReport = modifyHeadSection(htmlReport);
-        String finalHtmlReport =injectResultsOverviewLink(modifiedHtmlReport, getCheckmarxResultsOverviewUrl());
-        workspace.child(CHECKMARX_AST_RESULTS_HTML).write(finalHtmlReport, UTF_8.name());
-
+        workspace.child(workspace.getName() + "_" + CHECKMARX_AST_RESULTS_HTML).write(finalHtmlReport, UTF_8.name());
     }
 
     public static String modifyHeadSection(@Nonnull String htmlReport) {
@@ -305,6 +294,136 @@ public class PluginUtils {
         } catch (JSONException e) { return e.getLocalizedMessage( ) ; }
 
         return html.toString( );
+    }
+
+    private static String getHtmlText() {
+        return "<!DOCTYPE html>\n" +
+                "<html lang=\"en\">\n" +
+                "\n" +
+                "<head>\n" +
+                "    <meta http-equiv=\"Content-type\" content=\"text/html; charset=utf-8\">\n" +
+                "    <meta http-equiv=\"Content-Language\" content=\"en-us\">\n" +
+                "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+                "    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n" +
+                "    <title>Snyk test report</title>\n" +
+                "    <meta name=\"description\" content=\"18 known vulnerabilities found in 33 vulnerable dependency paths.\">\n" +
+                "    <link rel=\"icon\" type=\"image/png\"\n" +
+                "        href=\"https://res.cloudinary.com/snyk/image/upload/v1468845142/favicon/favicon.png\" sizes=\"194x194\">\n" +
+                "    <link rel=\"shortcut icon\" href=\"https://res.cloudinary.com/snyk/image/upload/v1468845142/favicon/favicon.ico\">\n" +
+                "    <script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js\"></script>\n" +
+                "    <style type=\"text/css\">\n" +
+                "    </style>\n" +
+                "    <script>\n" +
+                "        $(window).on('load', function() {\n" +
+                "            $('.value').each(function() {\n" +
+                "                var totalVal = $('#total').text()\n" +
+                "                var value = $(this).text();\n" +
+                "                var perc = ((value/totalVal) * 100);\n" +
+                "                $(this).css('width', perc +\"%\");\n" +
+                "            });\n" +
+                "        });\n" +
+                "        \n" +
+                "    </script>\n" +
+                "</head>\n" +
+                "\n" +
+                "<body>\n" +
+                "    <div class=\"main\">\n" +
+                "        <div class=\"header-row\">\n" +
+                "            <div class=\"info\">\n" +
+                "                <div class=\"data\">\n" +
+                "                    <div class=\"scan-svg\"><svg width=\"40\" height=\"40\" fill=\"none\">\n" +
+                "                            <path fill-rule=\"evenodd\" clip-rule=\"evenodd\"\n" +
+                "                                d=\"M9.393 32.273c-.65.651-1.713.656-2.296-.057A16.666 16.666 0 1136.583 20h1.75v3.333H22.887a3.333 3.333 0 110-3.333h3.911a7 7 0 10-12.687 5.45c.447.698.464 1.641-.122 2.227-.586.586-1.546.591-2.038-.075A10 10 0 1129.86 20h3.368a13.331 13.331 0 00-18.33-10.652A13.334 13.334 0 009.47 29.846c.564.727.574 1.776-.077 2.427z\"\n" +
+                "                                fill=\"url(#scans_svg__paint0_angular)\"></path>\n" +
+                "                            <path fill-rule=\"evenodd\" clip-rule=\"evenodd\"\n" +
+                "                                d=\"M9.393 32.273c-.65.651-1.713.656-2.296-.057A16.666 16.666 0 1136.583 20h1.75v3.333H22.887a3.333 3.333 0 110-3.333h3.911a7 7 0 10-12.687 5.45c.447.698.464 1.641-.122 2.227-.586.586-1.546.591-2.038-.075A10 10 0 1129.86 20h3.368a13.331 13.331 0 00-18.33-10.652A13.334 13.334 0 009.47 29.846c.564.727.574 1.776-.077 2.427z\"\n" +
+                "                                fill=\"url(#scans_svg__paint1_angular)\"></path>\n" +
+                "                            <defs>\n" +
+                "                                <radialGradient id=\"scans_svg__paint0_angular\" cx=\"0\" cy=\"0\" r=\"1\"\n" +
+                "                                    gradientUnits=\"userSpaceOnUse\"\n" +
+                "                                    gradientTransform=\"matrix(1 16.50003 -16.50003 1 20 21.5)\">\n" +
+                "                                    <stop offset=\"0.807\" stop-color=\"#2991F3\"></stop>\n" +
+                "                                    <stop offset=\"1\" stop-color=\"#2991F3\" stop-opacity=\"0\"></stop>\n" +
+                "                                </radialGradient>\n" +
+                "                                <radialGradient id=\"scans_svg__paint1_angular\" cx=\"0\" cy=\"0\" r=\"1\"\n" +
+                "                                    gradientUnits=\"userSpaceOnUse\"\n" +
+                "                                    gradientTransform=\"matrix(1 16.50003 -16.50003 1 20 21.5)\">\n" +
+                "                                    <stop offset=\"0.807\" stop-color=\"#2991F3\"></stop>\n" +
+                "                                    <stop offset=\"1\" stop-color=\"#2991F3\" stop-opacity=\"0\"></stop>\n" +
+                "                                </radialGradient>\n" +
+                "                            </defs>\n" +
+                "                        </svg></div>\n" +
+                "                    <div>Scan: d2fed170-d48f-4a81-a4ed-571936b52037</div>\n" +
+                "                </div>\n" +
+                "                <div class=\"data\">\n" +
+                "                    <div class=\"calendar-svg\"><svg width=\"12\" height=\"12\" fill=\"none\">\n" +
+                "                            <path fill-rule=\"evenodd\" clip-rule=\"evenodd\"\n" +
+                "                                d=\"M3.333 0h1.334v1.333h2.666V0h1.334v1.333h2c.368 0 .666.299.666.667v8.667a.667.667 0 01-.666.666H1.333a.667.667 0 01-.666-.666V2c0-.368.298-.667.666-.667h2V0zm4 2.667V4h1.334V2.667H10V10H2V2.667h1.333V4h1.334V2.667h2.666z\"\n" +
+                "                                fill=\"#95939B\"></path>\n" +
+                "                        </svg></div>\n" +
+                "                    <div>25/05/212021, 07:05:42</div>\n" +
+                "                </div>\n" +
+                "            </div>\n" +
+                "          \n" +
+                "        </div>\n" +
+                "        <div class=\"top-row\">\n" +
+                "            <div class=\"element risk-level-tile high\"><span class=\"value\">High Risk</span></div>\n" +
+                "            <div class=\"element\">\n" +
+                "                <div class=\"total\">Total Vulnerabilites</div>\n" +
+                "                <div>\n" +
+                "                    <div class=\"legend\"><span\n" +
+                "                            class=\"severity-legend-dot\">high</span>\n" +
+                "                        <div class=\"severity-legend-text bg-red\"></div>\n" +
+                "                    </div>\n" +
+                "                    <div class=\"legend\"><span\n" +
+                "                            class=\"severity-legend-dot\">medium</span>\n" +
+                "                        <div class=\"severity-legend-text bg-green\"></div>\n" +
+                "                    </div>\n" +
+                "                    <div class=\"legend\"><span\n" +
+                "                            class=\"severity-legend-dot\">low</span>\n" +
+                "                        <div class=\"severity-legend-text bg-grey\"></div>\n" +
+                "                    </div>\n" +
+                "                </div>\n" +
+                "                <div class=\"chart\">\n" +
+                "                    <div id=\"total\" class=\"total\">3171</div>\n" +
+                "                    <div class=\"single-stacked-bar-chart bar-chart\">\n" +
+                "                        <div class=\"progress\">\n" +
+                "                            <div class=\"progress-bar bg-danger value\" >94</div>\n" +
+                "                            <div class=\"progress-bar bg-warning value\">227</div>\n" +
+                "                            <div class=\"progress-bar bg-success value\">2977</div>\n" +
+                "                        </div>\n" +
+                "                    </div>\n" +
+                "                </div>\n" +
+                "            </div>\n" +
+                "            <div class=\"element\">\n" +
+                "                <div class=\"total\">Vulnerabilities per Scan Type</div>\n" +
+                "                <div class=\"legend\">\n" +
+                "                    <div class=\"legend\"><span\n" +
+                "                            class=\"engines-legend-dot\">SAST</span>\n" +
+                "                        <div class=\"severity-engines-text bg-sast\"></div>\n" +
+                "                    </div>\n" +
+                "                    <div class=\"legend\"><span\n" +
+                "                            class=\"engines-legend-dot\">KICS</span>\n" +
+                "                        <div class=\"severity-engines-text bg-kicks\"></div>\n" +
+                "                    </div>\n" +
+                "                    <div class=\"legend\"><span\n" +
+                "                            class=\"engines-legend-dot\">SCA</span>\n" +
+                "                        <div class=\"severity-engines-text bg-sca\"></div>\n" +
+                "                    </div>\n" +
+                "                </div>\n" +
+                "                <div class=\"chart\">\n" +
+                "                    <div class=\"single-stacked-bar-chart bar-chart\">\n" +
+                "                        <div class=\"progress\">\n" +
+                "                            <div class=\"progress-bar bg-sast value\">3010</div>\n" +
+                "                            <div class=\"progress-bar bg-kicks value\">161</div>\n" +
+                "                        </div>\n" +
+                "                    </div>\n" +
+                "                </div>\n" +
+                "            </div>\n" +
+                "        </div>\n" +
+                "        \n" +
+                "    </div>\n" +
+                "</body>";
     }
 
 }
