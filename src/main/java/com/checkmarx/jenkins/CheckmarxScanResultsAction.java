@@ -2,12 +2,18 @@ package com.checkmarx.jenkins;
 
 import hudson.model.Run;
 import jenkins.model.RunAction2;
+import jodd.jerry.Jerry;
+import lombok.SneakyThrows;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Objects;
 
 public class CheckmarxScanResultsAction implements RunAction2 {
-
+    private static final Jerry.JerryParser parser = Objects.requireNonNull(Jerry.jerry());
     private transient Run run;
 
     public CheckmarxScanResultsAction(@Nonnull final Run<?, ?> run) {
@@ -45,6 +51,24 @@ public class CheckmarxScanResultsAction implements RunAction2 {
 
     public String getHtmlReport() throws IOException {
         return "html Report for scan";
+    }
+
+    public String getHtmlSection(String section) {
+        Jerry document = getHtmlDocument();
+        return document != null ? document.$(section).text() : "";
+    }
+
+    @SneakyThrows
+    private Jerry getHtmlDocument() {
+        for (Object artifact : run.getArtifacts()) {
+            if (artifact instanceof Run.Artifact && ((Run.Artifact) artifact).getFileName().contains(PluginUtils.CHECKMARX_AST_RESULTS_HTML)) {
+                byte[] encoded = Files.readAllBytes(Paths.get(((Run.Artifact) artifact).getFile().getAbsolutePath()));
+                String htmlData = new String(encoded, Charset.defaultCharset());
+                return parser.parse(htmlData);
+            }
+        }
+
+        return null;
     }
 }
 

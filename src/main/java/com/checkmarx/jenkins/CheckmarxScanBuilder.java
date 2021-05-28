@@ -277,18 +277,18 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
         }
 
         //----------Integration with the wrapper------------
-//        boolean result = PluginUtils.submitScanDetailsToWrapper(scanConfig, checkmarxCliExecutable, log);
+        //boolean result = PluginUtils.submitScanDetailsToWrapper(scanConfig, checkmarxCliExecutable, log);
         boolean result = true;
 
-        if(result)
-        {
+        if (result) {
             PluginUtils.generateHTMLReport(workspace);
+
             ArtifactArchiver artifactArchiver = new ArtifactArchiver(workspace.getName() + "_" + PluginUtils.CHECKMARX_AST_RESULTS_HTML);
             artifactArchiver.perform(run, workspace, launcher, listener);
 
             run.setResult(Result.SUCCESS);
             return;
-        }else {
+        } else {
             run.setResult(Result.FAILURE);
             return;
         }

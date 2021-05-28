@@ -7,27 +7,16 @@ import com.checkmarx.jenkins.tools.CheckmarxInstallation;
 import hudson.FilePath;
 import hudson.model.Run;
 import jenkins.model.Jenkins;
-import jodd.jerry.Jerry;
-import org.apache.commons.io.IOUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import static com.cloudbees.plugins.credentials.CredentialsProvider.findCredentialById;
-import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class PluginUtils {
@@ -37,7 +26,6 @@ public class PluginUtils {
     private static String serverUrl;
     private static final String RESULTS_OVERVIEW_URL = "{serverUrl}/#/projects/{projectId}/overview";
     public static final String CHECKMARX_AST_RESULTS_HTML = "checkmarx-ast-results.html";
-    private static final Jerry.JerryParser parser = Objects.requireNonNull(Jerry.jerry());
 
     public static CheckmarxInstallation findCheckmarxInstallation(final String checkmarxInstallation) {
         final CheckmarxScanBuilder.CheckmarxScanBuilderDescriptor descriptor = Jenkins.get().getDescriptorByType(CheckmarxScanBuilder.CheckmarxScanBuilderDescriptor.class);
@@ -52,11 +40,11 @@ public class PluginUtils {
 
     public static String getSourceDirectory(final FilePath workspace) {
         final File file = new File(workspace.getRemote());
+
         return file.getAbsolutePath();
     }
 
     public static boolean submitScanDetailsToWrapper(final ScanConfig scanConfig, final String checkmarxCliExecutable, final CxLoggerAdapter log) throws IOException, InterruptedException, URISyntaxException {
-
         log.info("Submitting the scan details to the CLI wrapper.");
         final CxScanConfig scan = new CxScanConfig();
         scan.setBaseUri(scanConfig.getServerUrl());
@@ -70,7 +58,6 @@ public class PluginUtils {
         params.put(CxParamType.AGENT, PluginUtils.JENKINS);
         params.put(CxParamType.S, scanConfig.getSourceDirectory());
         params.put(CxParamType.TENANT, scanConfig.getTenantName());
-//        params.put(CxParamType.V, "");
 
         params.put(CxParamType.PROJECT_NAME, scanConfig.getProjectName());
         params.put(CxParamType.FILTER, scanConfig.getZipFileFilters());
@@ -86,11 +73,11 @@ public class PluginUtils {
             log.info("--------------- Checkmarx execution completed ---------------");
             return true;
         }
+
         return false;
     }
 
     private static String getScanType(final ScanConfig scanConfig, final CxLoggerAdapter log) {
-
         String scanType = "";
         final ArrayList<String> scannerList = PluginUtils.getEnabledScannersList(scanConfig, log);
 
@@ -99,12 +86,11 @@ public class PluginUtils {
         }
         scanType = scanType.trim();
         scanType = scanType.replace(" ", ",");
-        return scanType;
 
+        return scanType;
     }
 
     public static ArrayList<String> getEnabledScannersList(final ScanConfig scanConfig, final CxLoggerAdapter log) {
-
         final ArrayList<String> scannerList = new ArrayList<String>();
 
         if (scanConfig.isScaEnabled()) {
@@ -123,179 +109,15 @@ public class PluginUtils {
     }
 
     public static String getCheckmarxResultsOverviewUrl() {
-
         return String.format(RESULTS_OVERVIEW_URL, serverUrl, projectId);
-
     }
 
     public static void generateHTMLReport(FilePath workspace) throws IOException, InterruptedException {
         String htmlData = getHtmlText();
-
-        String finalHtmlReport = modifyHeadSection(htmlData);
-
-        workspace.child(workspace.getName() + "_" + CHECKMARX_AST_RESULTS_HTML).write(finalHtmlReport, UTF_8.name());
+        workspace.child(workspace.getName() + "_" + CHECKMARX_AST_RESULTS_HTML).write(htmlData, UTF_8.name());
     }
 
-    public static String modifyHeadSection(@Nonnull String htmlReport) {
-        Jerry document = parser.parse(htmlReport);
-
-        document.$("head").append("<link rel=\"stylesheet\" href=\"/jenkins/plugin/checkmarx-ast-scanner/css/report.css\" type=\"text/css\">");
-        return document.html();
-    }
-
-    public static String injectResultsOverviewLink(@Nonnull String html, @Nullable String overviewLink) {
-        if (overviewLink == null || overviewLink.isEmpty()) {
-            return html;
-        }
-
-        Jerry document = parser.parse(html);
-        String monitorHtmlSnippet = format("<center><a target=\"_blank\" href=\"%s\">View On Checkmarx</a></center>", overviewLink);
-        // prepend monitor link as first element after body
-        document.$("body").prepend(monitorHtmlSnippet);
-        return document.html();
-    }
-
-    /**
-     * Get the JSON data formated in HTML
-     */
-    public static String getHtmlData( String strJsonData ) {
-        return jsonToHtmlTable( new JSONObject( strJsonData ) );
-    }
-
-    private static String jsonToHtml(Object obj) {
-        StringBuilder html = new StringBuilder( );
-
-        try {
-            if (obj instanceof JSONObject) {
-                JSONObject jsonObject = (JSONObject)obj;
-                String[] keys = JSONObject.getNames( jsonObject );
-
-                html.append("<div class=\"json_object\">");
-
-                if (keys.length > 0) {
-                    for (String key : keys) {
-                        // print the key and open a DIV
-                        html.append("<div><span class=\"json_key\">")
-                                .append(key).append("</span> : ");
-
-                        Object val = jsonObject.get(key);
-                        // recursive call
-                        html.append( jsonToHtml( val ) );
-                        // close the div
-                        html.append("</div>");
-                    }
-                }
-
-                html.append("</div>");
-
-            } else if (obj instanceof JSONArray) {
-                JSONArray array = (JSONArray)obj;
-                for ( int i=0; i < array.length( ); i++) {
-                    // recursive call
-                    html.append( jsonToHtml( array.get(i) ) );
-                }
-            } else {
-                // print the value
-                html.append( obj );
-            }
-        } catch (JSONException e) { return e.getLocalizedMessage( ) ; }
-
-        return html.toString( );
-    }
-
-    private static String jsonToHtmlTable(Object obj) {
-        StringBuilder html = new StringBuilder( );
-
-        int countHigh=0;
-        int countLow=0;
-        int countMedium=0;
-
-
-        html.append("<!DOCTYPE html>");
-        html.append("<html>");
-        html.append("<head>");
-        html.append("<title>CxASTScans");
-        html.append("</title>");
-
-        html.append("</head>");
-        html.append("<body>");
-
-        //start table
-        html.append("<div class=\"divTable\">");
-        html.append("<div class=\"divTableBody\">");
-
-        html.append("<div class=\"divTableRow\">");
-        html.append("<div class=\"divTableCell\" >").append("High").append("</div>");
-        html.append("<div class=\"divTableCell\" >").append("Medium").append("</div>");
-        html.append("<div class=\"divTableCell\" >").append("Low").append("</div>");
-        html.append("</div>");
-
-        try {
-            if (obj instanceof JSONObject) {
-                JSONObject jsonObject = (JSONObject)obj;
-                String[] keys = JSONObject.getNames( jsonObject );
-
-              //  html.append("<div class=\"json_object\">");
-
-                if (keys.length > 0) {
-                    for (String key : keys) {
-                        //check value of key
-                        if(key.equals("results")) //going inside "results"
-                        {
-                            //get the value of "results" (key)
-                            Object val = jsonObject.get(key);
-
-                            if (val instanceof JSONArray)
-                            {
-                                JSONArray array = (JSONArray)val;
-                                for ( int i=1; i < array.length( ); i++) { //skipping first item and going to second onwards
-
-                                    if(array.get(i) instanceof JSONObject) //going inside each item
-                                    {
-                                        JSONObject arrayItem = (JSONObject)array.get(i);
-                                        String valType = (String) arrayItem.get("type");
-                                        String valSeverity = (String) arrayItem.get("severity");
-                                        if(valSeverity.equals("LOW"))
-                                        {
-                                            countLow++;
-                                        }
-                                        if(valSeverity.equals("MEDIUM"))
-                                        {
-                                            countMedium++;
-                                        }
-                                        if(valSeverity.equals("HIGH"))
-                                        {
-                                            countHigh++;
-                                        }
-
-                                    }
-                                }
-                            }
-
-                        }
-
-                    }
-                }
-
-                //Second row for Values
-                html.append("<div class=\"divTableRow\">");
-                html.append("<div class=\"divTableCell\">").append(countHigh).append("</div>");
-                html.append("<div class=\"divTableCell\">").append(countMedium).append("</div>");
-                html.append("<div class=\"divTableCell\">").append(countLow).append("</div>");
-                html.append("</div>");
-
-                html.append("</div>"); //end of TableBody
-                html.append("</div>"); //end of Table
-
-                html.append("</body>");
-                html.append("</html>");
-
-            }
-        } catch (JSONException e) { return e.getLocalizedMessage( ) ; }
-
-        return html.toString( );
-    }
-
+    //TODO: Replace by output from cli
     private static String getHtmlText() {
         return "<!DOCTYPE html>\n" +
                 "<html lang=\"en\">\n" +
@@ -305,31 +127,304 @@ public class PluginUtils {
                 "    <meta http-equiv=\"Content-Language\" content=\"en-us\">\n" +
                 "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
                 "    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n" +
-                "    <title>Snyk test report</title>\n" +
-                "    <meta name=\"description\" content=\"18 known vulnerabilities found in 33 vulnerable dependency paths.\">\n" +
-                "    <link rel=\"icon\" type=\"image/png\"\n" +
-                "        href=\"https://res.cloudinary.com/snyk/image/upload/v1468845142/favicon/favicon.png\" sizes=\"194x194\">\n" +
-                "    <link rel=\"shortcut icon\" href=\"https://res.cloudinary.com/snyk/image/upload/v1468845142/favicon/favicon.ico\">\n" +
-                "    <script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js\"></script>\n" +
+                "    <title>Checkmarx test report</title>\n" +
                 "    <style type=\"text/css\">\n" +
+                "        * {\n" +
+                "            box-sizing: border-box;\n" +
+                "            margin: 0;\n" +
+                "            padding: 0;\n" +
+                "        }\n" +
+                "\n" +
+                "        .bg-green {\n" +
+                "            background-color: #f9ae4d;\n" +
+                "        }\n" +
+                "\n" +
+                "        .bg-grey {\n" +
+                "            background-color: #bdbdbd;\n" +
+                "        }\n" +
+                "\n" +
+                "        .bg-kicks {\n" +
+                "            background-color: #008e96 !important;\n" +
+                "        }\n" +
+                "\n" +
+                "        .bg-red {\n" +
+                "            background-color: #f1605d;\n" +
+                "        }\n" +
+                "\n" +
+                "        .bg-sast {\n" +
+                "            background-color: #1165b4 !important;\n" +
+                "        }\n" +
+                "\n" +
+                "        .bg-sca {\n" +
+                "            background-color: #0fcdc2 !important;\n" +
+                "        }\n" +
+                "\n" +
+                "        .header-row .cx-info .data .calendar-svg {\n" +
+                "            margin-right: 8px;\n" +
+                "        }\n" +
+                "\n" +
+                "        .header-row .cx-info .data .scan-svg svg {\n" +
+                "            -webkit-transform: scale(0.43);\n" +
+                "            margin-top: -9px;\n" +
+                "            transform: scale(0.43);\n" +
+                "        }\n" +
+                "\n" +
+                "        .header-row .cx-info .data .scan-svg {\n" +
+                "            margin-left: -10px;\n" +
+                "        }\n" +
+                "\n" +
+                "        .header-row .cx-info .data svg path {\n" +
+                "            fill: #565360;\n" +
+                "        }\n" +
+                "\n" +
+                "        .header-row .cx-info .data {\n" +
+                "            color: #565360;\n" +
+                "            display: flex;\n" +
+                "            margin-right: 20px;\n" +
+                "        }\n" +
+                "\n" +
+                "        .header-row .cx-info {\n" +
+                "            display: flex;\n" +
+                "            font-size: 13px;\n" +
+                "        }\n" +
+                "\n" +
+                "        .header-row {\n" +
+                "            -ms-flex-pack: justify;\n" +
+                "            -webkit-box-pack: justify;\n" +
+                "            display: flex;\n" +
+                "            height: 30px;\n" +
+                "            justify-content: space-between;\n" +
+                "            margin-bottom: 5px;\n" +
+                "        }\n" +
+                "\n" +
+                "        .cx-cx-main {\n" +
+                "            align-items: center;\n" +
+                "            display: flex;\n" +
+                "            flex-flow: row wrap;\n" +
+                "            justify-content: space-around;\n" +
+                "            left: 0;\n" +
+                "            position: relative;\n" +
+                "            top: 0;\n" +
+                "            width: 100%;\n" +
+                "        }\n" +
+                "\n" +
+                "        .progress {\n" +
+                "            background-color: #e9ecef;\n" +
+                "            display: flex;\n" +
+                "            height: 1em;\n" +
+                "            overflow: hidden;\n" +
+                "        }\n" +
+                "\n" +
+                "        .progress-bar {\n" +
+                "            -ms-flex-direction: column;\n" +
+                "            -ms-flex-pack: center;\n" +
+                "            -webkit-box-direction: normal;\n" +
+                "            -webkit-box-orient: vertical;\n" +
+                "            -webkit-box-pack: center;\n" +
+                "            background-color: grey;\n" +
+                "            color: #FFF;\n" +
+                "            display: flex;\n" +
+                "            flex-direction: column;\n" +
+                "            font-size: 11px;\n" +
+                "            justify-content: center;\n" +
+                "            text-align: center;\n" +
+                "            white-space: nowrap;\n" +
+                "        }\n" +
+                "\n" +
+                "\n" +
+                "        .top-row .element {\n" +
+                "            margin: 0 3rem 6rem;\n" +
+                "        }\n" +
+                "\n" +
+                "        .top-row .risk-level-tile .value {\n" +
+                "            display: inline-block;\n" +
+                "            font-size: 32px;\n" +
+                "            font-weight: 700;\n" +
+                "            margin-top: 20px;\n" +
+                "            text-align: center;\n" +
+                "            width: 100%;\n" +
+                "        }\n" +
+                "\n" +
+                "        .top-row .risk-level-tile {\n" +
+                "            -webkit-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);\n" +
+                "            background: #fff;\n" +
+                "            border: 1px solid #dad8dc;\n" +
+                "            border-radius: 4px;\n" +
+                "            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);\n" +
+                "            color: #565360;\n" +
+                "            min-height: 120px;\n" +
+                "            width: 24.5%;\n" +
+                "        }\n" +
+                "\n" +
+                "        .top-row .risk-level-tile.high {\n" +
+                "            background: #f1605d;\n" +
+                "            color: #fcfdff;\n" +
+                "        }\n" +
+                "\n" +
+                "\n" +
+                "        .chart .total {\n" +
+                "            font-size: 24px;\n" +
+                "            font-weight: 700;\n" +
+                "        }\n" +
+                "\n" +
+                "        .chart .bar-chart {\n" +
+                "            margin-left: 10px;\n" +
+                "            padding-top: 7px;\n" +
+                "            width: 100%;\n" +
+                "        }\n" +
+                "\n" +
+                "        .legend {\n" +
+                "            color: #95939b;\n" +
+                "            float: left;\n" +
+                "            padding-right: 10px;\n" +
+                "            text-transform: capitalize;\n" +
+                "        }\n" +
+                "\n" +
+                "\n" +
+                "        .chart .total {\n" +
+                "            font-size: 24px;\n" +
+                "            font-weight: 700;\n" +
+                "        }\n" +
+                "\n" +
+                "        .chart .bar-chart {\n" +
+                "            margin-left: 10px;\n" +
+                "            padding-top: 7px;\n" +
+                "            width: 100%;\n" +
+                "        }\n" +
+                "\n" +
+                "        .top-row .vps-tile .legend {\n" +
+                "            color: #95939b;\n" +
+                "            float: left;\n" +
+                "            padding-right: 10px;\n" +
+                "            text-transform: capitalize;\n" +
+                "        }\n" +
+                "\n" +
+                "        .chart .engines-bar-chart {\n" +
+                "            margin-bottom: 6px;\n" +
+                "            margin-top: 7px;\n" +
+                "            width: 100%;\n" +
+                "        }\n" +
+                "\n" +
+                "        .legend {\n" +
+                "            color: #95939b;\n" +
+                "            text-transform: capitalize;\n" +
+                "            float: left;\n" +
+                "            padding-right: 10px;\n" +
+                "        }\n" +
+                "\n" +
+                "        .top-row {\n" +
+                "            -ms-flex-pack: justify;\n" +
+                "            -webkit-box-pack: justify;\n" +
+                "            align-items: center;\n" +
+                "            display: flex;\n" +
+                "            justify-content: space-evenly;\n" +
+                "            padding: 20px;\n" +
+                "            width: 100%;\n" +
+                "        }\n" +
+                "\n" +
+                "        .bar-chart .progress .progress-bar.bg-danger {\n" +
+                "            background-color: #f1605d !important;\n" +
+                "        }\n" +
+                "\n" +
+                "        .bar-chart .progress .progress-bar.bg-success {\n" +
+                "            background-color: #bdbdbd !important;\n" +
+                "        }\n" +
+                "\n" +
+                "        .bar-chart .progress .progress-bar.bg-warning {\n" +
+                "            background-color: #f9ae4d !important;\n" +
+                "        }\n" +
+                "\n" +
+                "        .width-100 {\n" +
+                "            width: 100%;\n" +
+                "        }\n" +
+                "\n" +
+                "        .bar-chart .progress .progress-bar {\n" +
+                "            color: #FFF;\n" +
+                "            font-size: 11px;\n" +
+                "            font-weight: 500;\n" +
+                "            min-width: fit-content;\n" +
+                "            padding: 0 3px;\n" +
+                "        }\n" +
+                "\n" +
+                "        .bar-chart .progress .progress-bar:not(:last-child),\n" +
+                "        .progress-bar:not(:last-child),\n" +
+                "        .bar-chart .progress .progress-bar:not(:last-child) {\n" +
+                "            border-right: 1px solid #FFF;\n" +
+                "        }\n" +
+                "\n" +
+                "        .bar-chart .progress {\n" +
+                "            background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAIklEQVQYV2NkQAIfPnz6zwjjgzgCAnyMYAEYB8RmROaABAAU7g/W6mdTYAAAAABJRU5ErkJggg==) repeat;\n" +
+                "            border: 1px solid #f0f0f0;\n" +
+                "            border-radius: 3px;\n" +
+                "            height: 1.5rem;\n" +
+                "            overflow: hidden;\n" +
+                "        }\n" +
+                "\n" +
+                "        .engines-legend-dot,\n" +
+                "        .severity-legend-dot {\n" +
+                "            font-size: 14px;\n" +
+                "            padding-left: 5px;\n" +
+                "        }\n" +
+                "\n" +
+                "        .severity-engines-text,\n" +
+                "        .severity-legend-text {\n" +
+                "            float: left;\n" +
+                "            height: 10px;\n" +
+                "            margin-top: 5px;\n" +
+                "            width: 10px;\n" +
+                "        }\n" +
+                "\n" +
+                "        .chart {\n" +
+                "            display: flex;\n" +
+                "        }\n" +
+                "\n" +
+                "        .element .total {\n" +
+                "            font-weight: 700;\n" +
+                "        }\n" +
+                "\n" +
+                "        .top-row .element {\n" +
+                "            -ms-flex-direction: column;\n" +
+                "            -ms-flex-pack: justify;\n" +
+                "            -webkit-box-direction: normal;\n" +
+                "            -webkit-box-orient: vertical;\n" +
+                "            -webkit-box-pack: justify;\n" +
+                "            -webkit-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);\n" +
+                "            background: #fff;\n" +
+                "            border-radius: 4px;\n" +
+                "            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);\n" +
+                "            color: #565360;\n" +
+                "            display: flex;\n" +
+                "            flex-direction: column;\n" +
+                "            justify-content: space-between;\n" +
+                "            min-height: 120px;\n" +
+                "            padding: 16px 20px;\n" +
+                "            width: 24.5%;\n" +
+                "        }\n" +
+                "        .cx-demo { \n" +
+                "            color: red;\n" +
+                "            align-items: center;\n" +
+                "            text-align: center;\n" +
+                "            margin-bottom: 10px;\n" +
+                "        }\n" +
                 "    </style>\n" +
                 "    <script>\n" +
-                "        $(window).on('load', function() {\n" +
-                "            $('.value').each(function() {\n" +
-                "                var totalVal = $('#total').text()\n" +
-                "                var value = $(this).text();\n" +
-                "                var perc = ((value/totalVal) * 100);\n" +
-                "                $(this).css('width', perc +\"%\");\n" +
-                "            });\n" +
-                "        });\n" +
-                "        \n" +
+                "        window.addEventListener('load', function () {\n" +
+                "            var totalVal = document.getElementById(\"total\").textContent;\n" +
+                "            var elements = document.getElementsByClassName(\"value\");\n" +
+                "            for (var i = 0; i < elements.length; i++) {\n" +
+                "                var element = elements[i];\n" +
+                "                var perc = ((element.textContent / totalVal) * 100);\n" +
+                "                element.style.width = perc + \"%\";\n" +
+                "            }\n" +
+                "        }, false);\n" +
                 "    </script>\n" +
                 "</head>\n" +
                 "\n" +
                 "<body>\n" +
-                "    <div class=\"main\">\n" +
+                "    <p class=\"cx-demo\">DEMO Values</p>\n" +
+                "    <div class=\"cx-main\">\n" +
                 "        <div class=\"header-row\">\n" +
-                "            <div class=\"info\">\n" +
+                "            <div class=\"cx-info\">\n" +
                 "                <div class=\"data\">\n" +
                 "                    <div class=\"scan-svg\"><svg width=\"40\" height=\"40\" fill=\"none\">\n" +
                 "                            <path fill-rule=\"evenodd\" clip-rule=\"evenodd\"\n" +
@@ -364,23 +459,20 @@ public class PluginUtils {
                 "                    <div>25/05/212021, 07:05:42</div>\n" +
                 "                </div>\n" +
                 "            </div>\n" +
-                "          \n" +
+                "\n" +
                 "        </div>\n" +
                 "        <div class=\"top-row\">\n" +
                 "            <div class=\"element risk-level-tile high\"><span class=\"value\">High Risk</span></div>\n" +
                 "            <div class=\"element\">\n" +
                 "                <div class=\"total\">Total Vulnerabilites</div>\n" +
                 "                <div>\n" +
-                "                    <div class=\"legend\"><span\n" +
-                "                            class=\"severity-legend-dot\">high</span>\n" +
+                "                    <div class=\"legend\"><span class=\"severity-legend-dot\">high</span>\n" +
                 "                        <div class=\"severity-legend-text bg-red\"></div>\n" +
                 "                    </div>\n" +
-                "                    <div class=\"legend\"><span\n" +
-                "                            class=\"severity-legend-dot\">medium</span>\n" +
+                "                    <div class=\"legend\"><span class=\"severity-legend-dot\">medium</span>\n" +
                 "                        <div class=\"severity-legend-text bg-green\"></div>\n" +
                 "                    </div>\n" +
-                "                    <div class=\"legend\"><span\n" +
-                "                            class=\"severity-legend-dot\">low</span>\n" +
+                "                    <div class=\"legend\"><span class=\"severity-legend-dot\">low</span>\n" +
                 "                        <div class=\"severity-legend-text bg-grey\"></div>\n" +
                 "                    </div>\n" +
                 "                </div>\n" +
@@ -388,7 +480,7 @@ public class PluginUtils {
                 "                    <div id=\"total\" class=\"total\">3171</div>\n" +
                 "                    <div class=\"single-stacked-bar-chart bar-chart\">\n" +
                 "                        <div class=\"progress\">\n" +
-                "                            <div class=\"progress-bar bg-danger value\" >94</div>\n" +
+                "                            <div class=\"progress-bar bg-danger value\">94</div>\n" +
                 "                            <div class=\"progress-bar bg-warning value\">227</div>\n" +
                 "                            <div class=\"progress-bar bg-success value\">2977</div>\n" +
                 "                        </div>\n" +
@@ -398,16 +490,13 @@ public class PluginUtils {
                 "            <div class=\"element\">\n" +
                 "                <div class=\"total\">Vulnerabilities per Scan Type</div>\n" +
                 "                <div class=\"legend\">\n" +
-                "                    <div class=\"legend\"><span\n" +
-                "                            class=\"engines-legend-dot\">SAST</span>\n" +
+                "                    <div class=\"legend\"><span class=\"engines-legend-dot\">SAST</span>\n" +
                 "                        <div class=\"severity-engines-text bg-sast\"></div>\n" +
                 "                    </div>\n" +
-                "                    <div class=\"legend\"><span\n" +
-                "                            class=\"engines-legend-dot\">KICS</span>\n" +
+                "                    <div class=\"legend\"><span class=\"engines-legend-dot\">KICS</span>\n" +
                 "                        <div class=\"severity-engines-text bg-kicks\"></div>\n" +
                 "                    </div>\n" +
-                "                    <div class=\"legend\"><span\n" +
-                "                            class=\"engines-legend-dot\">SCA</span>\n" +
+                "                    <div class=\"legend\"><span class=\"engines-legend-dot\">SCA</span>\n" +
                 "                        <div class=\"severity-engines-text bg-sca\"></div>\n" +
                 "                    </div>\n" +
                 "                </div>\n" +
@@ -421,7 +510,7 @@ public class PluginUtils {
                 "                </div>\n" +
                 "            </div>\n" +
                 "        </div>\n" +
-                "        \n" +
+                "\n" +
                 "    </div>\n" +
                 "</body>";
     }
