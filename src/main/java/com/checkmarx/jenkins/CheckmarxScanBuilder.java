@@ -219,11 +219,10 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
 
     @SneakyThrows
     @Override
-    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath workspace, @Nonnull Launcher launcher, @Nonnull TaskListener listener) throws InterruptedException, IOException {
+    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath workspace, EnvVars envVars, @Nonnull Launcher launcher, @Nonnull TaskListener listener) throws InterruptedException, IOException {
 
         final CheckmarxScanBuilderDescriptor descriptor = getDescriptor();
         log = new CxLoggerAdapter(listener.getLogger());
-        EnvVars envVars = run.getEnvironment(listener);
 
         ScanConfig scanConfig = resolveConfiguration(run, workspace, descriptor, envVars, log);
         printConfiguration(scanConfig, log);
@@ -277,21 +276,19 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
         }
 
         //----------Integration with the wrapper------------
-        //boolean result = PluginUtils.submitScanDetailsToWrapper(scanConfig, checkmarxCliExecutable, log);
-        boolean result = true;
+        final boolean result = PluginUtils.submitScanDetailsToWrapper(scanConfig, checkmarxCliExecutable, this.log);
 
         if (result) {
             PluginUtils.generateHTMLReport(workspace);
 
             ArtifactArchiver artifactArchiver = new ArtifactArchiver(workspace.getName() + "_" + PluginUtils.CHECKMARX_AST_RESULTS_HTML);
-            artifactArchiver.perform(run, workspace, launcher, listener);
+            artifactArchiver.perform(run, workspace, envVars, launcher, listener);
 
             run.setResult(Result.SUCCESS);
-            return;
         } else {
             run.setResult(Result.FAILURE);
-            return;
         }
+        return;
     }
 
     private void printConfiguration(ScanConfig scanConfig, CxLoggerAdapter log) {
@@ -344,7 +341,7 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
 
         if (this.getUseOwnServerCredentials()) {
             scanConfig.setServerUrl(getServerUrl());
-            scanConfig.setTeamName(getTenantName());
+            scanConfig.setTenantName(getTenantName());
             scanConfig.setCheckmarxToken(getCheckmarxTokenCredential(run, getCredentialsId()));
 
         } else {

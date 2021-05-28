@@ -6,7 +6,6 @@ import jodd.jerry.Jerry;
 import lombok.SneakyThrows;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -49,10 +48,6 @@ public class CheckmarxScanResultsAction implements RunAction2 {
         return "scanResults";
     }
 
-    public String getHtmlReport() throws IOException {
-        return "html Report for scan";
-    }
-
     public String getReportHtml() {
         Jerry document = getHtmlDocument();
         return document != null ? document.$("body").html() : "";
@@ -72,9 +67,10 @@ public class CheckmarxScanResultsAction implements RunAction2 {
     private Jerry getHtmlDocument() {
         for (Object artifact : run.getArtifacts()) {
             if (artifact instanceof Run.Artifact && ((Run.Artifact) artifact).getFileName().contains(PluginUtils.CHECKMARX_AST_RESULTS_HTML)) {
+
                 byte[] encoded = Files.readAllBytes(Paths.get(((Run.Artifact) artifact).getFile().getCanonicalPath()));
                 String htmlData = new String(encoded, Charset.defaultCharset());
-                return parser.parse(htmlData);
+                return CheckmarxScanResultsAction.parser.parse(htmlData);
             }
         }
         return null;

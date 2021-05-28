@@ -10,7 +10,6 @@
             <h3>Checkmarx Scan Results</h3>
             <style><j:out value="${it.reportCss}"/></style>
             <script><j:out value="${it.reportScript}"/></script>
-
             <j:out value="${it.reportHtml}"/>
         </l:main-panel>
     </l:layout>

@@ -17,13 +17,12 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static com.cloudbees.plugins.credentials.CredentialsProvider.findCredentialById;
+import static hudson.Util.fixEmptyAndTrim;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class PluginUtils {
 
     private static final String JENKINS = "Jenkins";
-    private static String projectId;
-    private static String serverUrl;
     private static final String RESULTS_OVERVIEW_URL = "{serverUrl}/#/projects/{projectId}/overview";
     public static final String CHECKMARX_AST_RESULTS_HTML = "checkmarx-ast-results.html";
 
@@ -57,7 +56,9 @@ public class PluginUtils {
         final Map<CxParamType, String> params = new HashMap<>();
         params.put(CxParamType.AGENT, PluginUtils.JENKINS);
         params.put(CxParamType.S, scanConfig.getSourceDirectory());
-        params.put(CxParamType.TENANT, scanConfig.getTenantName());
+        if(fixEmptyAndTrim(scanConfig.getTenantName())!= null) {
+            params.put(CxParamType.TENANT, scanConfig.getTenantName());
+        }
 
         params.put(CxParamType.PROJECT_NAME, scanConfig.getProjectName());
         params.put(CxParamType.FILTER, scanConfig.getZipFileFilters());
@@ -67,8 +68,6 @@ public class PluginUtils {
         final CxScan cxScan = wrapper.cxScanCreate(params);
 
         if (cxScan != null) {
-            PluginUtils.projectId = cxScan.getProjectID();
-            PluginUtils.serverUrl = scanConfig.getServerUrl();
             log.info(cxScan.toString());
             log.info("--------------- Checkmarx execution completed ---------------");
             return true;
@@ -109,7 +108,7 @@ public class PluginUtils {
     }
 
     public static String getCheckmarxResultsOverviewUrl() {
-        return String.format(RESULTS_OVERVIEW_URL, serverUrl, projectId);
+        return String.format(RESULTS_OVERVIEW_URL);
     }
 
     public static void generateHTMLReport(FilePath workspace) throws IOException, InterruptedException {
