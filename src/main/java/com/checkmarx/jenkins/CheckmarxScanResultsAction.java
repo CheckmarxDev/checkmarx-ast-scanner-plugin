@@ -72,7 +72,7 @@ public class CheckmarxScanResultsAction implements RunAction2 {
     private Jerry getHtmlDocument() {
         for (Object artifact : run.getArtifacts()) {
             if (artifact instanceof Run.Artifact && ((Run.Artifact) artifact).getFileName().contains(PluginUtils.CHECKMARX_AST_RESULTS_HTML)) {
-                byte[] encoded = Files.readAllBytes(Paths.get(((Run.Artifact) artifact).getFile().getAbsolutePath()));
+                byte[] encoded = Files.readAllBytes(Paths.get(((Run.Artifact) artifact).getFile().getCanonicalPath()));
                 String htmlData = new String(encoded, Charset.defaultCharset());
                 return parser.parse(htmlData);
             }
