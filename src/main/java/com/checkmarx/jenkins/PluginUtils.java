@@ -195,6 +195,8 @@ public class PluginUtils {
                 "            height: 30px;\n" +
                 "            justify-content: space-between;\n" +
                 "            margin-bottom: 5px;\n" +
+                "            align-items: center;\n" +
+                "            justify-content: center;\n" +
                 "        }\n" +
                 "\n" +
                 "        .cx-cx-main {\n" +
@@ -421,7 +423,7 @@ public class PluginUtils {
                 "</head>\n" +
                 "\n" +
                 "<body>\n" +
-                "    <p class=\"cx-demo\">DEMO Values</p>\n" +
+                "    <p class=\"cx-demo\">Mock Values</p>\n" +
                 "    <div class=\"cx-main\">\n" +
                 "        <div class=\"header-row\">\n" +
                 "            <div class=\"cx-info\">\n" +

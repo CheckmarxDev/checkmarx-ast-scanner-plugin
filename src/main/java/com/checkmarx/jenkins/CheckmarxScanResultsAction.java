@@ -53,9 +53,19 @@ public class CheckmarxScanResultsAction implements RunAction2 {
         return "html Report for scan";
     }
 
-    public String getHtmlSection(String section) {
+    public String getReportHtml() {
         Jerry document = getHtmlDocument();
-        return document != null ? document.$(section).text() : "";
+        return document != null ? document.$("body").html() : "";
+    }
+
+    public String getReportCss() {
+        Jerry document = getHtmlDocument();
+        return document != null ? document.$("style").text() : "";
+    }
+
+    public String getReportScript() {
+        Jerry document = getHtmlDocument();
+        return document != null ? document.$("script").text() : "";
     }
 
     @SneakyThrows
@@ -67,7 +77,6 @@ public class CheckmarxScanResultsAction implements RunAction2 {
                 return parser.parse(htmlData);
             }
         }
-
         return null;
     }
 }
