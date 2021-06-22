@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.anyOf;
 import static com.cloudbees.plugins.credentials.CredentialsMatchers.withId;
@@ -227,6 +228,7 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
     public boolean isUseAuthenticationUrl() {
         return useAuthenticationUrl;
     }
+
     @DataBoundSetter
     public void setUseAuthenticationUrl(boolean useAuthenticationUrl) {
         this.useAuthenticationUrl = useAuthenticationUrl;
@@ -235,6 +237,7 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
     public String getBaseAuthUrl() {
         return baseAuthUrl;
     }
+
     @DataBoundSetter
     public void setBaseAuthUrl(String baseAuthUrl) {
         this.baseAuthUrl = baseAuthUrl;
@@ -320,16 +323,16 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
         if (StringUtils.isNotEmpty(scanConfig.getBaseAuthUrl())) {
             log.info("Checkmarx Auth Server Url: " + scanConfig.getBaseAuthUrl());
         }
-        log.info("Tenant Name: " + scanConfig.getTenantName());
-        log.info("Project Name: " + scanConfig.getProjectName());
-        log.info("Team Name: " + scanConfig.getTeamName());
+        log.info("Tenant Name: " + Optional.ofNullable(scanConfig.getTenantName()).orElse(""));
+        log.info("Project Name: " + Optional.ofNullable(scanConfig.getProjectName()).orElse(""));
+        log.info("Team Name: " + Optional.ofNullable(scanConfig.getTeamName()).orElse(""));
         log.info("Using Job Specific File filters: " + getUseFileFiltersFromJobConfig());
 
         if (getUseFileFiltersFromJobConfig()) {
             log.info("Using File Filters: " + scanConfig.getZipFileFilters());
         }
 
-        log.info("Additional Options: " + scanConfig.getAdditionalOptions());
+        log.info("Additional Options: " + Optional.ofNullable(scanConfig.getAdditionalOptions()).orElse(""));
 
         log.info("Enabled Scan Engines: ");
 
@@ -408,9 +411,9 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
 
     private String cleanFilters(String filter) {
         String cleanFilter = fixEmptyAndTrim(filter);
-        if (cleanFilter== null) return "";
+        if (cleanFilter == null) return "";
 
-        return cleanFilter.replaceAll("\\s+","");
+        return cleanFilter.replaceAll("\\s+", "");
     }
 
     @Override
@@ -529,6 +532,13 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
             return this.installations.length > 0;
         }
 
+        public FormValidation doCheckServerUrl(@QueryParameter String value) {
+            if (Util.fixEmptyAndTrim(value) == null) {
+                return FormValidation.error("Server Url cannot be empty");
+            }
+            return FormValidation.ok();
+        }
+
         public FormValidation doTestConnection(@QueryParameter final String serverUrl, @QueryParameter final String credentialsId, @AncestorInPath Item item,
                                                @AncestorInPath final Job job) {
             try {
@@ -542,7 +552,13 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
             } catch (final Exception e) {
                 return FormValidation.error("Client error : " + e.getMessage());
             }
+        }
 
+        public FormValidation doCheckProjectName(@QueryParameter String value) {
+            if (Util.fixEmptyAndTrim(value) == null) {
+                return FormValidation.error("Project Name cannot be empty");
+            }
+            return FormValidation.ok();
         }
 
         public ListBoxModel doFillCredentialsIdItems(@AncestorInPath Item item, @QueryParameter String credentialsId) {
