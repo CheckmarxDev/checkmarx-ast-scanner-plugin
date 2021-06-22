@@ -75,7 +75,8 @@
         <dependency>
             <groupId>com.checkmarx.ast</groupId>
             <artifactId>ast-cli-java-wrapper</artifactId>
-            <version>1.0.3</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/ast-cli-java-wrapper-1.0.3.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>

@@ -65,14 +65,6 @@ public class CheckmarxInstallation extends ToolInstallation implements Environme
     }
 
     private String resolveExecutable(final String file, final Platform platform) throws IOException {
-//        final Path nodeModulesBin = getNodeModulesBin();
-//        if (nodeModulesBin != null) {
-//            final Path executable = nodeModulesBin.resolve(file);
-//            if (!executable.toFile().exists()) {
-//                throw new IOException(format("Could not find executable <%s>", executable));
-//            }
-//            return executable.toAbsolutePath().toString();
-//        } else {
         final String root = this.getHome();
         if (root == null) {
             return null;
@@ -83,24 +75,8 @@ public class CheckmarxInstallation extends ToolInstallation implements Environme
             throw new IOException(format("Could not find executable <%s>", wrapperFileName));
         }
         return executable.toAbsolutePath().toString();
-//        }
-
     }
 
-
-//    private Path getNodeModulesBin() {
-//        String root = getHome();
-//        if (root == null) {
-//            return null;
-//        }
-//
-//        Path nodeModules = Paths.get(root).resolve("node_modules").resolve(".bin");
-//        if (!nodeModules.toFile().exists()) {
-//            return null;
-//        }
-//
-//        return nodeModules;
-//    }
 
     @Extension
     @Symbol("checkmarx")

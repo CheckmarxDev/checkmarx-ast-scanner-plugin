@@ -1,5 +1,7 @@
 package com.checkmarx.jenkins;
 
+import com.checkmarx.ast.CxAuthType;
+import com.checkmarx.ast.CxScanConfig;
 import com.checkmarx.jenkins.config.CheckmarxConstants;
 import com.checkmarx.jenkins.credentials.CheckmarxApiToken;
 import com.checkmarx.jenkins.model.ScanConfig;
@@ -31,6 +33,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -422,6 +425,7 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
         private String tenantName;
         private String baseAuthUrl;
         private boolean useAuthenticationUrl;
+        private String checkmarxInstallation;
         private String credentialsId;
         @Nullable
         private String zipFileFilters;
@@ -504,12 +508,20 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
             this.zipFileFilters = zipFileFilters;
         }
 
+        public String getCheckmarxInstallation() {
+            return checkmarxInstallation;
+        }
+
+        public void setCheckmarxInstallation(String checkmarxInstallation) {
+            this.checkmarxInstallation = checkmarxInstallation;
+        }
+
+
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             JSONObject pluginData = formData.getJSONObject("checkmarx");
             req.bindJSON(this, pluginData);
             save();
             return false;
-            //  return super.configure(req, formData);
         }
 
         public boolean hasInstallationsAvailable() {
@@ -521,7 +533,10 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
             return this.installations.length > 0;
         }
 
-        public FormValidation doTestConnection(@QueryParameter final String serverUrl, @QueryParameter final String credentialsId, @AncestorInPath Item item,
+        public FormValidation doTestConnection(@QueryParameter final String serverUrl,
+                                               @QueryParameter final String credentialsId,
+                                               @QueryParameter final String checkmarxInstallation,
+                                               @AncestorInPath Item item,
                                                @AncestorInPath final Job job) {
             try {
                 if (job == null) {
@@ -529,16 +544,41 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
                 } else {
                     job.checkPermission(Item.CONFIGURE);
                 }
-                // test logic here
+
+                PrintStream pout = new PrintStream(System.out);
+                TaskListener taskListener = () -> pout;
+
+                Launcher launcher = Jenkins.get().createLauncher(taskListener);
+                Computer computer = Arrays.stream(Jenkins.get().getComputers()).findFirst().get();
+                Node node = computer.getNode();
+
+                //// Check for required version of CLI
+                CheckmarxInstallation cxInstallation = PluginUtils
+                        .findCheckmarxInstallation(checkmarxInstallation)
+                        .forNode(node, taskListener);
+
+                String cxInstallationPath = cxInstallation.getCheckmarxExecutable(launcher);
+
+                CheckmarxApiToken checkmarxApiToken =
+                        CredentialsMatchers.firstOrNull(
+                                lookupCredentials(CheckmarxApiToken.class, Jenkins.get(), ACL.SYSTEM, Collections.emptyList()),
+                                withId(credentialsId));
+
+                CxScanConfig config = new CxScanConfig();
+                config.setBaseUri(serverUrl);
+                config.setAuthType(CxAuthType.TOKEN);
+                config.setApiKey(checkmarxApiToken.getToken().getPlainText());
+
+                config.setPathToExecutable(cxInstallationPath);
+
+
                 return FormValidation.ok("Success");
             } catch (final Exception e) {
                 return FormValidation.error("Client error : " + e.getMessage());
             }
-
         }
 
         public ListBoxModel doFillCredentialsIdItems(@AncestorInPath Item item, @QueryParameter String credentialsId) {
-
             StandardListBoxModel result = new StandardListBoxModel();
             if (item == null) {
                 if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
@@ -555,6 +595,7 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
                     .includeCurrentValue(credentialsId);
 
         }
+
 
         public FormValidation doCheckCredentialsId(@AncestorInPath Item item,
                                                    @QueryParameter String value

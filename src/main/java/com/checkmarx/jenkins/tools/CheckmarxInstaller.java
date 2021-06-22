@@ -47,18 +47,15 @@ public class CheckmarxInstaller extends ToolInstaller {
     public FilePath performInstallation(ToolInstallation toolInstallation, Node node, TaskListener taskListener) throws IOException, InterruptedException {
         log = new CxLoggerAdapter(taskListener.getLogger());
 
-        FilePath expected = preferredLocation(tool, node);
+        FilePath expected = preferredLocation(toolInstallation, node);
 
         if (isUpToDate(expected, log)) {
             log.info("Checkmarx installation is UP-TO-DATE");
             return expected;
         }
         log.info("Installing Checkmarx AST CLI tool (version '" + fixEmptyAndTrim(version) + "')");
-//        if (this.isNpmAvailable(node, taskListener)) {
-//            return this.installCheckmarxCliAsNpmPackage(expected, node, taskListener);
-//        } else {
+
         return installCheckmarxCliAsSingleBinary(expected, node, taskListener);
-//        }
     }
 
     private boolean isUpToDate(FilePath expectedLocation, CxLoggerAdapter log) throws IOException, InterruptedException {
@@ -86,49 +83,7 @@ public class CheckmarxInstaller extends ToolInstaller {
         return timestampDifference < updateInterval;
     }
 
-//    private boolean isNpmAvailable(final Node node, final TaskListener log) {
-//        final Launcher launcher = node.createLauncher(log);
-//        final Launcher.ProcStarter ps = launcher.new ProcStarter();
-//        ps.quiet(true).cmds("npm", "--version");
-//
-//        try {
-//            final int exitCode = launcher.launch(ps).join();
-//            return exitCode == 0;
-//        } catch (final Exception ex) {
-//            log.getLogger().println("NPM not available.");
-//            //     LOG.info("NPM is not available on the node: '{}'", node.getDisplayName());
-//            //     LOG.debug("'npm --version' command failed", ex);
-//            return false;
-//        }
-//    }
-
-//    private FilePath installCheckmarxCliAsNpmPackage(final FilePath expected, final Node node, final TaskListener log) throws ToolDetectionException {
-//        // LOG.info("Install Checkmarx CLI version '{}' as NPM package on node '{}'", version, node.getDisplayName());
-//
-//        final ArgumentListBuilder args = new ArgumentListBuilder();
-//        args.add("npm", "install", "--prefix", expected.getRemote(), "checkmarx@" + fixEmptyAndTrim(this.version));
-//        final Launcher launcher = node.createLauncher(log);
-//        final Launcher.ProcStarter ps = launcher.new ProcStarter();
-//        ps.quiet(true).cmds(args);
-//
-//        try {
-//            final int exitCode = launcher.launch(ps).join();
-//            if (exitCode != 0) {
-//                log.getLogger().println("Checkmarx installation was not successful. Exit code: " + exitCode);
-//                return expected;
-//            }
-//            expected.child(CheckmarxInstaller.TIMESTAMP_FILE).write(valueOf(Instant.now().toEpochMilli()), UTF_8.name());
-//        } catch (final Exception ex) {
-//            log.getLogger().println("Checkmarx AST CLI could not installed: " + ex.getMessage());
-//            throw new ToolDetectionException("Could not install Checkmarx CLI with npm", ex);
-//        }
-//        return expected;
-//    }
-
     private FilePath installCheckmarxCliAsSingleBinary(FilePath expected, Node node, TaskListener log) throws IOException, InterruptedException {
-
-        //   LOG.info("Install Checkmarx version '{}' as single binary on node '{}'", version, node.getDisplayName());
-
         final VirtualChannel nodeChannel = node.getChannel();
         if (nodeChannel == null) {
             throw new IOException(format("Node '%s' is offline", node.getDisplayName()));
@@ -210,7 +165,6 @@ public class CheckmarxInstaller extends ToolInstaller {
         public Void call() throws IOException {
             final File downloadedFile = new File(output.getRemote());
             FileUtils.copyURLToFile(downloadUrl, downloadedFile, 10000, 10000);
-            // set execute permission
             if (!Functions.isWindows() && downloadedFile.isFile()) {
                 boolean result = downloadedFile.setExecutable(true, false);
                 if (!result) {
