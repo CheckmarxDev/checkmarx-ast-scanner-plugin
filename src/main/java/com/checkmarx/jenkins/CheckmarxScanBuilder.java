@@ -385,10 +385,11 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
         scanConfig.setContainerScanEnabled(getContainerScanEnabled());
 
         if (getUseFileFiltersFromJobConfig()) {
-            scanConfig.setZipFileFilters(this.getZipFileFilters());
+            scanConfig.setZipFileFilters(cleanFilters(this.getZipFileFilters()));
         } else {
-            scanConfig.setZipFileFilters(descriptor.getZipFileFilters());
+            scanConfig.setZipFileFilters(cleanFilters(descriptor.getZipFileFilters()));
         }
+
 
         if (fixEmptyAndTrim(getAdditionalOptions()) != null) {
             scanConfig.setAdditionalOptions(getAdditionalOptions());
@@ -403,6 +404,13 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
 
     private CheckmarxApiToken getCheckmarxTokenCredential(Run<?, ?> run, String credentialsId) {
         return findCredentialById(credentialsId, CheckmarxApiToken.class, run);
+    }
+
+    private String cleanFilters(String filter) {
+        String cleanFilter = fixEmptyAndTrim(filter);
+        if (cleanFilter== null) return "";
+
+        return cleanFilter.replaceAll("\\s+","");
     }
 
     @Override
@@ -514,7 +522,7 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
 
         public boolean hasInstallationsAvailable() {
             if (LOG.isTraceEnabled()) {
-                LOG.trace("Available Checkmarx installations: {}",
+                LOG.trace("Available : {}",
                         Arrays.stream(this.installations).map(CheckmarxInstallation::getName).collect(joining(",", "[", "]")));
             }
 
