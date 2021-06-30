@@ -1,7 +1,7 @@
 package com.checkmarx.jenkins;
 
+import com.checkmarx.ast.CxAuth;
 import com.checkmarx.ast.CxScanConfig;
-import com.checkmarx.jenkins.config.CheckmarxConstants;
 import com.checkmarx.jenkins.credentials.CheckmarxApiToken;
 import com.checkmarx.jenkins.model.ScanConfig;
 import com.checkmarx.jenkins.tools.CheckmarxInstallation;
@@ -32,7 +32,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -217,7 +216,6 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
         this.additionalOptions = additionalOptions;
     }
 
-    @SuppressWarnings("unused")
     public String getCheckmarxInstallation() {
         return checkmarxInstallation;
     }
@@ -262,6 +260,8 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
             run.setResult(Result.FAILURE);
             return;
         }
+
+        if (useOwnServerCredentials) checkmarxInstallation = descriptor.getCheckmarxInstallation();
 
         //// Check for required version of CLI
         CheckmarxInstallation installation = PluginUtils.findCheckmarxInstallation(checkmarxInstallation);
@@ -427,8 +427,8 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
     @Extension
     public static class CheckmarxScanBuilderDescriptor extends BuildStepDescriptor<Builder> {
 
-        public static final String DEFAULT_FILTER_PATTERNS = CheckmarxConstants.DEFAULT_FILTER_PATTERNS;
         private static final Logger LOG = LoggerFactory.getLogger(CheckmarxScanBuilderDescriptor.class.getName());
+        private static final int authValid = 0;
 
         @Nullable
         private String serverUrl;
@@ -551,6 +551,9 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
         }
 
         public FormValidation doTestConnection(@QueryParameter final String serverUrl,
+                                               @QueryParameter final boolean useAuthenticationUrl,
+                                               @QueryParameter final String baseAuthUrl,
+                                               @QueryParameter final String tenantName,
                                                @QueryParameter final String credentialsId,
                                                @QueryParameter final String checkmarxInstallation,
                                                @AncestorInPath Item item,
@@ -562,36 +565,50 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
                     job.checkPermission(Item.CONFIGURE);
                 }
 
-                PrintStream pout = new PrintStream(System.out);
-                TaskListener taskListener = () -> pout;
-
-                Launcher launcher = Jenkins.get().createLauncher(taskListener);
-                Computer computer = Arrays.stream(Jenkins.get().getComputers()).findFirst().get();
-                Node node = computer.getNode();
-
-                //// Check for required version of CLI
-                CheckmarxInstallation cxInstallation = PluginUtils
-                        .findCheckmarxInstallation(checkmarxInstallation)
-                        .forNode(node, taskListener);
-
-                String cxInstallationPath = cxInstallation.getCheckmarxExecutable(launcher);
-
-                CheckmarxApiToken checkmarxApiToken =
-                        CredentialsMatchers.firstOrNull(
-                                lookupCredentials(CheckmarxApiToken.class, Jenkins.get(), ACL.SYSTEM, Collections.emptyList()),
-                                withId(credentialsId));
+                String cxInstallationPath = getCheckmarxInstallationPath(checkmarxInstallation);
+                CheckmarxApiToken checkmarxApiToken = getCheckmarxApiToken(credentialsId);
 
                 CxScanConfig config = new CxScanConfig();
                 config.setBaseUri(serverUrl);
+                config.setTenant(tenantName);
                 config.setApiKey(checkmarxApiToken.getToken().getPlainText());
-
                 config.setPathToExecutable(cxInstallationPath);
 
+                if (useAuthenticationUrl) {
+                    config.setBaseAuthUri(baseAuthUrl);
+                }
 
-                return FormValidation.ok("Success");
+                CxAuth cxAuth = new CxAuth(config, LOG);
+                Integer valid = cxAuth.cxAuthValidate();
+
+                return valid != null && valid.intValue() == authValid ? FormValidation.ok("Success") : FormValidation.ok("Failed");
             } catch (final Exception e) {
-                return FormValidation.error("Client error : " + e.getMessage());
+                return FormValidation.ok("Error: " + e.getMessage());
             }
+        }
+
+        private String getCheckmarxInstallationPath(String checkmarxInstallation) throws Exception {
+            if (StringUtils.isEmpty(checkmarxInstallation)) throw new Exception("Checkmarx installation not provided");
+
+            TaskListener taskListener = () -> System.out;
+            Launcher launcher = Jenkins.get().createLauncher(taskListener);
+            Computer computer = Arrays.stream(Jenkins.get().getComputers()).findFirst().orElseThrow(() -> new Exception("Error getting runner"));
+            Node node = Optional.ofNullable(computer.getNode()).orElseThrow(() -> new Exception("Error getting runner"));
+
+            CheckmarxInstallation cxInstallation = PluginUtils
+                    .findCheckmarxInstallation(checkmarxInstallation)
+                    .forNode(node, taskListener);
+
+            return cxInstallation.getCheckmarxExecutable(launcher);
+        }
+
+        private CheckmarxApiToken getCheckmarxApiToken(String credentialsId) throws Exception {
+            CheckmarxApiToken checkmarxApiToken =
+                    CredentialsMatchers.firstOrNull(
+                            lookupCredentials(CheckmarxApiToken.class, Jenkins.get(), ACL.SYSTEM, Collections.emptyList()),
+                            withId(credentialsId));
+
+            return Optional.ofNullable(checkmarxApiToken).orElseThrow(() -> new Exception("Error getting credentials"));
         }
 
         public FormValidation doCheckProjectName(@QueryParameter String value) {
