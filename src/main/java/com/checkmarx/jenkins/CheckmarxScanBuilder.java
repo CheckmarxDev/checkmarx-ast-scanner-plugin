@@ -322,9 +322,9 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
     }
 
     private String getDefaultBranchName(EnvVars envVars) {
-        if (!envVars.get(GIT_BRANCH).isEmpty()) return envVars.get(GIT_BRANCH).replaceAll("^([^/]+)/", "");
-        if (!envVars.get(CVS_BRANCH).isEmpty()) return envVars.get(CVS_BRANCH);
-        if (!envVars.get(SVN_REVISION).isEmpty()) return envVars.get(SVN_REVISION);
+        if (!StringUtils.isEmpty(envVars.get(GIT_BRANCH))) return envVars.get(GIT_BRANCH).replaceAll("^([^/]+)/", "");
+        if (!StringUtils.isEmpty(envVars.get(CVS_BRANCH))) return envVars.get(CVS_BRANCH);
+        if (!StringUtils.isEmpty(envVars.get(SVN_REVISION))) return envVars.get(SVN_REVISION);
 
         return null;
     }
