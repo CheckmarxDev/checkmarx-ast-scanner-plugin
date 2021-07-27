@@ -220,7 +220,7 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
 
         printConfiguration(scanConfig, log);
 
-        if (useOwnServerCredentials) checkmarxInstallation = descriptor.getCheckmarxInstallation();
+        if (!getUseOwnServerCredentials()) checkmarxInstallation = descriptor.getCheckmarxInstallation();
         //// Check for required version of CLI
         CheckmarxInstallation installation = PluginUtils.findCheckmarxInstallation(checkmarxInstallation);
         if (installation == null) {
