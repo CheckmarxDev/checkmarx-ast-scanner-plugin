@@ -64,15 +64,12 @@ public class PluginUtils {
         params.put(CxParamType.ADDITIONAL_PARAMETERS, scanConfig.getAdditionalOptions());
         params.put(CxParamType.BRANCH, scanConfig.getBranchName());
 
-        final CxScan cxScan = wrapper.cxScanCreate(params);
+        final CxCommandOutput cxScan = wrapper.cxScanCreate(params);
 
-        if (cxScan != null) {
-            log.info(cxScan.toString());
-            log.info("--------------- Checkmarx execution completed ---------------");
-            return true;
-        }
+        log.info("--------------- Checkmarx execution completed ---------------");
 
-        return false;
+
+        return cxScan.getExitCode() == 0 ? true : false;
     }
 
     public static String getCheckmarxResultsOverviewUrl() {
