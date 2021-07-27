@@ -28,6 +28,7 @@ public class CheckmarxScanBuilderTest extends CheckmarxTestBase {
         checkmarxScanBuilder.setTenantName(this.astTenantName);
         checkmarxScanBuilder.setCheckmarxInstallation(Constants.JT_LATEST);
         checkmarxScanBuilder.setCredentialsId(Constants.JT_TOKEN_ID);
+        checkmarxScanBuilder.setAdditionalOptions("--scan-types sast");
 
         freeStyleProject.getBuildersList().add(checkmarxScanBuilder);
 

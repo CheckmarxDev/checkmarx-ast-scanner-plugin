@@ -21,7 +21,7 @@ public class CheckmarxScanPipelineTest extends CheckmarxTestBase {
         project.setDefinition(new CpsFlowDefinition("" +
                 "node {" +
                 "  writeFile file: 'test.yml', text: 'overwrite me' \n" +
-                "  checkmarxASTScanner additionalOptions: '', useOwnServerCredentials: true, baseAuthUrl: '"+this.astBaseAuthUrl+"', checkmarxInstallation: '"+Constants.JT_LATEST+"', credentialsId: '"+Constants.JT_TOKEN_ID+"', projectName: 'successIntegrationJenkinsScan', serverUrl: '"+this.astServerUrl+"', tenantName: '"+this.astTenantName+"', zipFileFilters: ''" +
+                "  checkmarxASTScanner additionalOptions: '--scan-types sast', useOwnServerCredentials: true, baseAuthUrl: '"+this.astBaseAuthUrl+"', checkmarxInstallation: '"+Constants.JT_LATEST+"', credentialsId: '"+Constants.JT_TOKEN_ID+"', projectName: 'successIntegrationJenkinsScan', serverUrl: '"+this.astServerUrl+"', tenantName: '"+this.astTenantName+"', zipFileFilters: ''" +
                 "}", true));
 
         WorkflowRun workflowRun = project.scheduleBuild2(0).waitForStart();
@@ -37,7 +37,7 @@ public class CheckmarxScanPipelineTest extends CheckmarxTestBase {
         project.setDefinition(new CpsFlowDefinition("" +
                 "node {" +
                 "  writeFile file: 'test.yml', text: 'overwrite me' \n" +
-                "  checkmarxASTScanner additionalOptions: '', useOwnServerCredentials: false, checkmarxInstallation: '"+Constants.JT_LATEST+"',  credentialsId: '"+Constants.JT_TOKEN_ID+"', projectName: 'doFailWhenUseOwnServerCredentialButNotConfigured', serverUrl: '"+this.astServerUrl+"', tenantName: '"+this.astTenantName+"', zipFileFilters: ''" +
+                "  checkmarxASTScanner additionalOptions: '--scan-types sast', useOwnServerCredentials: false, checkmarxInstallation: '"+Constants.JT_LATEST+"',  credentialsId: '"+Constants.JT_TOKEN_ID+"', projectName: 'doFailWhenUseOwnServerCredentialButNotConfigured', serverUrl: '"+this.astServerUrl+"', tenantName: '"+this.astTenantName+"', zipFileFilters: ''" +
                 "}", true));
 
         WorkflowRun workflowRun = project.scheduleBuild2(0).waitForStart();
