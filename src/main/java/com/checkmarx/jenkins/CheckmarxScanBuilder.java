@@ -281,7 +281,7 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
         if (!StringUtils.isEmpty(envVars.get(CVS_BRANCH))) return envVars.get(CVS_BRANCH);
         if (!StringUtils.isEmpty(envVars.get(SVN_REVISION))) return envVars.get(SVN_REVISION);
 
-        return null;
+        return "";
     }
 
     private void printConfiguration(ScanConfig scanConfig, CxLoggerAdapter log) {
@@ -346,7 +346,7 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
         }
 
         String defaultBranchName = getDefaultBranchName(envVars);
-        if (!StringUtils.isEmpty(defaultBranchName)) scanConfig.setBranchName(defaultBranchName);
+        scanConfig.setBranchName(defaultBranchName);
 
         if (fixEmptyAndTrim(getAdditionalOptions()) != null) {
             scanConfig.setAdditionalOptions(getAdditionalOptions());

@@ -7,6 +7,7 @@ import com.checkmarx.jenkins.tools.CheckmarxInstallation;
 import hudson.FilePath;
 import hudson.model.Run;
 import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,9 +61,18 @@ public class PluginUtils {
         params.put(CxParamType.AGENT, PluginUtils.JENKINS);
         params.put(CxParamType.S, scanConfig.getSourceDirectory());
         params.put(CxParamType.PROJECT_NAME, scanConfig.getProjectName());
-        params.put(CxParamType.FILTER, scanConfig.getZipFileFilters());
-        params.put(CxParamType.ADDITIONAL_PARAMETERS, scanConfig.getAdditionalOptions());
-        params.put(CxParamType.BRANCH, scanConfig.getBranchName());
+
+        if (StringUtils.isNotEmpty(scanConfig.getAdditionalOptions())) {
+            params.put(CxParamType.ADDITIONAL_PARAMETERS, scanConfig.getAdditionalOptions());
+        }
+
+        if (StringUtils.isNotEmpty(scanConfig.getZipFileFilters())) {
+            params.put(CxParamType.FILTER, scanConfig.getZipFileFilters());
+        }
+
+        if (StringUtils.isNotEmpty(scanConfig.getBranchName())) {
+            params.put(CxParamType.BRANCH, scanConfig.getBranchName());
+        }
 
         final CxCommandOutput cxScan = wrapper.cxScanCreate(params);
 
