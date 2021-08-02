@@ -1,6 +1,8 @@
 package com.checkmarx.jenkins;
 
-import com.checkmarx.ast.*;
+import com.checkmarx.ast.scans.*;
+import com.checkmarx.ast.exceptions.CxException;
+import com.checkmarx.ast.results.*;
 import com.checkmarx.jenkins.credentials.CheckmarxApiToken;
 import com.checkmarx.jenkins.model.ScanConfig;
 import com.checkmarx.jenkins.tools.CheckmarxInstallation;
@@ -44,18 +46,19 @@ public class PluginUtils {
         return file.getAbsolutePath();
     }
 
-    public static boolean submitScanDetailsToWrapper(final ScanConfig scanConfig, final String checkmarxCliExecutable, final CxLoggerAdapter log) throws IOException, InterruptedException, URISyntaxException {
+    public static CxScan submitScanDetailsToWrapper(final ScanConfig scanConfig, final String checkmarxCliExecutable, final CxLoggerAdapter log) throws IOException, InterruptedException, URISyntaxException {
         log.info("Submitting the scan details to the CLI wrapper.");
-        final CxScanConfig scan = new CxScanConfig();
-        scan.setBaseUri(scanConfig.getServerUrl());
-        scan.setBaseAuthUri(scanConfig.getBaseAuthUrl());
-        if(fixEmptyAndTrim(scanConfig.getTenantName())!= null) {
-            scan.setTenant(scanConfig.getTenantName());
-        }
-        scan.setApiKey(scanConfig.getCheckmarxToken().getToken().getPlainText());
-        scan.setPathToExecutable(checkmarxCliExecutable);
 
-        final CxAuth wrapper = new CxAuth(scan, log);
+        // final CxScanConfig scan = new CxScanConfig();
+        // scan.setBaseUri(scanConfig.getServerUrl());
+        // scan.setBaseAuthUri(scanConfig.getBaseAuthUrl());
+        // if(fixEmptyAndTrim(scanConfig.getTenantName())!= null) {
+        //     scan.setTenant(scanConfig.getTenantName());
+        // }
+        // scan.setApiKey(scanConfig.getCheckmarxToken().getToken().getPlainText());
+        // scan.setPathToExecutable(checkmarxCliExecutable);
+
+        final CxAuth wrapper = initiateWrapperObject(scanConfig, checkmarxCliExecutable, log);
 
         final Map<CxParamType, String> params = new HashMap<>();
         params.put(CxParamType.AGENT, PluginUtils.JENKINS);
@@ -76,19 +79,36 @@ public class PluginUtils {
 
         final CxCommandOutput cxScan = wrapper.cxScanCreate(params);
 
+        /**
+         * Return the object and pass the scan ID to generate report
+         */
         log.info("--------------- Checkmarx execution completed ---------------");
 
 
-        return cxScan.getExitCode() == 0 ? true : false;
+        return cxScan.getScanObjectList() != null ? cxScan.getScanObjectList().get(0) : null;
     }
 
     public static String getCheckmarxResultsOverviewUrl() {
         return String.format(RESULTS_OVERVIEW_URL);
     }
 
-    public static void generateHTMLReport(FilePath workspace) throws IOException, InterruptedException {
-        String htmlData = getHtmlText();
+    public static void generateHTMLReport(FilePath workspace, String scanId, final ScanConfig scanConfig, final String checkmarxCliExecutable, final CxLoggerAdapter log) throws IOException, InterruptedException, CxException, URISyntaxException {
+        CxAuth auth = initiateWrapperObject(scanConfig, checkmarxCliExecutable, log);
+        String htmlData = auth.cxGetResultsSummary(scanId, "", "");
         workspace.child(workspace.getName() + "_" + CHECKMARX_AST_RESULTS_HTML).write(htmlData, UTF_8.name());
+    }
+
+    private static CxAuth initiateWrapperObject(final ScanConfig scanConfig, final String checkmarxCliExecutable, final CxLoggerAdapter log) throws IOException, InterruptedException, CxException, URISyntaxException {
+        final CxScanConfig scan = new CxScanConfig();
+        scan.setBaseUri(scanConfig.getServerUrl());
+        scan.setBaseAuthUri(scanConfig.getBaseAuthUrl());
+        if(fixEmptyAndTrim(scanConfig.getTenantName())!= null) {
+            scan.setTenant(scanConfig.getTenantName());
+        }
+        scan.setApiKey(scanConfig.getCheckmarxToken().getToken().getPlainText());
+        scan.setPathToExecutable(checkmarxCliExecutable);
+
+        return new CxAuth(scan, log);
     }
 
     //TODO: Replace by output from cli
