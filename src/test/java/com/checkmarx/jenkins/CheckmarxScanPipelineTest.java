@@ -22,7 +22,7 @@ public class CheckmarxScanPipelineTest extends CheckmarxTestBase {
                 "node {" +
                 "  writeFile file: 'test.yml', text: 'overwrite me' \n" +
                 "  checkmarxASTScanner additionalOptions: '--scan-types sast', useOwnServerCredentials: true, baseAuthUrl: '" + this.astBaseAuthUrl + "', checkmarxInstallation: '" + Constants.JT_LATEST + "', credentialsId: '" + Constants.JT_TOKEN_ID + "', projectName: 'successIntegrationJenkinsScan', serverUrl: '" + this.astServerUrl + "', tenantName: '" + this.astTenantName +
-                "}", true));
+                "'}", true));
 
         WorkflowRun workflowRun = project.scheduleBuild2(0).waitForStart();
         jenkins.waitForCompletion(workflowRun);
@@ -38,7 +38,7 @@ public class CheckmarxScanPipelineTest extends CheckmarxTestBase {
                 "node {" +
                 "  writeFile file: 'test.yml', text: 'overwrite me' \n" +
                 "  checkmarxASTScanner additionalOptions: '--scan-types sast', useOwnServerCredentials: false, checkmarxInstallation: '" + Constants.JT_LATEST + "',  credentialsId: '" + Constants.JT_TOKEN_ID + "', projectName: 'doFailWhenUseOwnServerCredentialButNotConfigured', serverUrl: '" + this.astServerUrl + "', tenantName: '" + this.astTenantName +
-                "}", true));
+                "'}", true));
 
         WorkflowRun workflowRun = project.scheduleBuild2(0).waitForStart();
         jenkins.waitForCompletion(workflowRun);
