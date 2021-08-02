@@ -264,7 +264,7 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
 
         //----------Integration with the wrapper------------
         final CxScan resultObject = PluginUtils.submitScanDetailsToWrapper(scanConfig, checkmarxCliExecutable, this.log);
-        if (resultObject != null && resultObject.getStatus().equals("Completed")) {
+        if (resultObject != null) {
             PluginUtils.generateHTMLReport(workspace, resultObject.getID(), scanConfig, checkmarxCliExecutable, log);
 
             ArtifactArchiver artifactArchiver = new ArtifactArchiver(workspace.getName() + "_" + PluginUtils.CHECKMARX_AST_RESULTS_HTML);
