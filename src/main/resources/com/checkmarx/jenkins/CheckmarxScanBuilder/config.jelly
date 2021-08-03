@@ -65,6 +65,10 @@
     <!-- *************************** Common Scan Settings ***************************************** -->
 
     <f:section title="Advanced Options">
+
+        <f:entry title="Global Additional Arguments">
+            <f:textarea value="${descriptor.getAdditionalOptions()}" style="background-color: lightgrey" readonly="true" />
+        </f:entry>
         <f:optionalBlock title="Use global additional arguments" inline="true"
                          field="useOwnAdditionalOptions" negative="true"
                          checked="${instance == null ? true : !instance.getUseOwnAdditionalOptions()}">
