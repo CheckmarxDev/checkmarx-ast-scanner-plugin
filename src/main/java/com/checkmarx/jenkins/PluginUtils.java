@@ -76,7 +76,7 @@ public class PluginUtils {
         log.info("--------------- Checkmarx execution completed ---------------");
 
 
-        return cxScan.getScanObjectList() != null ? cxScan.getScanObjectList().get(0) : null;
+        return  ((cxScan.getExitCode() == 0) && (cxScan.getScanObjectList() != null)) ? cxScan.getScanObjectList().get(0) : null;
     }
 
     public static String getCheckmarxResultsOverviewUrl() {
