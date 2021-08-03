@@ -52,6 +52,7 @@ public class CheckmarxScanBuilderTest extends CheckmarxTestBase {
         checkmarxScanBuilder.setCheckmarxInstallation(Constants.JT_LATEST);
         checkmarxScanBuilder.setCredentialsId(Constants.JT_TOKEN_ID);
         checkmarxScanBuilder.setAdditionalOptions("--sast-preset-name Fake");
+        checkmarxScanBuilder.setUseOwnAdditionalOptions(true);
 
         freeStyleProject.getBuildersList().add(checkmarxScanBuilder);
 
@@ -76,6 +77,7 @@ public class CheckmarxScanBuilderTest extends CheckmarxTestBase {
         checkmarxScanBuilder.setCheckmarxInstallation(Constants.JT_LATEST);
         checkmarxScanBuilder.setCredentialsId(Constants.JT_TOKEN_ID);
         checkmarxScanBuilder.setAdditionalOptions("--fakeproperty");
+        checkmarxScanBuilder.setUseOwnAdditionalOptions(true);
 
         freeStyleProject.getBuildersList().add(checkmarxScanBuilder);
 

@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
@@ -61,7 +60,7 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
     private String credentialsId;
     private String checkmarxInstallation;
     private String additionalOptions;
-    private boolean useGlobalAdditionalOptions;
+    private boolean useOwnAdditionalOptions;
     private boolean useOwnServerCredentials;
 
     @DataBoundConstructor
@@ -73,7 +72,7 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
                                 String projectName,
                                 String teamName,
                                 String credentialsId,
-                                boolean useGlobalAdditionalOptions,
+                                boolean useOwnAdditionalOptions,
                                 String additionalOptions
     ) {
         this.useOwnServerCredentials = useOwnServerCredentials;
@@ -84,7 +83,7 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
         this.projectName = projectName;
         this.teamName = teamName;
         this.credentialsId = credentialsId;
-        this.useGlobalAdditionalOptions = useGlobalAdditionalOptions;
+        this.useOwnAdditionalOptions = useOwnAdditionalOptions;
         this.additionalOptions = additionalOptions;
     }
 
@@ -146,13 +145,13 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
         this.credentialsId = credentialsId;
     }
 
-    public boolean getUseGlobalAdditionalOptions() {
-        return useGlobalAdditionalOptions;
+    public boolean getUseOwnAdditionalOptions() {
+        return useOwnAdditionalOptions;
     }
 
     @DataBoundSetter
-    public void setUseGlobalAdditionalOptions(boolean useGlobalAdditionalOptions) {
-        this.useGlobalAdditionalOptions = useGlobalAdditionalOptions;
+    public void setUseOwnAdditionalOptions(boolean useOwnAdditionalOptions) {
+        this.useOwnAdditionalOptions = useOwnAdditionalOptions;
     }
 
     public String getAdditionalOptions() {
@@ -280,10 +279,10 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
         log.info("Tenant Name: " + Optional.ofNullable(scanConfig.getTenantName()).orElse(""));
         log.info("Project Name: " + Optional.ofNullable(scanConfig.getProjectName()).orElse(""));
         log.info("Team Name: " + Optional.ofNullable(scanConfig.getTeamName()).orElse(""));
-        log.info("Using Job Specific File filters: " + getUseGlobalAdditionalOptions());
 
         log.info("Default branch name: " + Optional.ofNullable(scanConfig.getBranchName()).orElse(""));
 
+        log.info("Using global additional options: " + getUseOwnAdditionalOptions());
         log.info("Additional Options: " + Optional.ofNullable(scanConfig.getAdditionalOptions()).orElse(""));
 
     }
@@ -325,7 +324,7 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
         String defaultBranchName = getDefaultBranchName(envVars);
         scanConfig.setBranchName(defaultBranchName);
 
-        if (getUseGlobalAdditionalOptions()) {
+        if (getUseOwnAdditionalOptions()) {
             scanConfig.setAdditionalOptions(getAdditionalOptions());
         } else {
             scanConfig.setAdditionalOptions(descriptor.getAdditionalOptions());
