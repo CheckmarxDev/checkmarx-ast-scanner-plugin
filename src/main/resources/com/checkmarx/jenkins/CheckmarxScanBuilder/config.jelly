@@ -3,6 +3,24 @@
          xmlns:f="/lib/form">
     <!-- ********************** Checkmarx Installation ********************************************** -->
 
+    <!-- Workaround for jenkins bug in the UI.
+         Using f:section without a name breaks optional blocks.
+         Using f:section with a name changes its style.
+         To use a section with optional blocks, use instead an f:block containing a div,
+         and give class cx-section-header to the div.
+         The section title goes inside the div. -->
+    <style type="text/css">
+        .cx-section-header {
+            font-weight: 600;
+            font-size: 1.25rem;
+            line-height: 1.2;
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 0.75rem;
+            margin-top: 1.5rem;
+            padding-bottom: 3px;
+        }
+    </style>
+
     <f:entry title="Checkmarx installation" field="checkmarxInstallation">
         <j:choose>
             <j:when test="${descriptor.hasInstallationsAvailable()}">
@@ -25,7 +43,9 @@
 
 
     <!-- ********************** Server Settings ********************************************** -->
-    <f:section title=""/>
+    <f:block>
+        <div class="cx-section-header"/>
+    </f:block>
 
     <f:optionalBlock title="Use global server credentials (${descriptor.credentialsDescription})" inline="true"
                      field="useOwnServerCredentials" negative="true"
@@ -53,29 +73,34 @@
 
     <!-- *********************** AST Repo Settings ********************************************* -->
 
-    <f:section title="Checkmarx AST Repo Settings">
-        <f:entry title="CxAST Project Name" field="projectName">
-            <f:textbox/>
-        </f:entry>
-        <f:entry title="Group Name" field="groupName">
-            <f:textbox/>
-        </f:entry>
-    </f:section>
+    <f:block>
+        <div class="cx-section-header">
+            Checkmarx AST Repo Settings
+        </div>
+    </f:block>
+    <f:entry title="CxAST Project Name" field="projectName">
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="Group Name" field="groupName">
+        <f:textbox/>
+    </f:entry>
 
     <!-- *************************** Common Scan Settings ***************************************** -->
 
-    <f:section title="Advanced Options">
-
-        <f:entry title="Global Additional Arguments">
-            <f:textarea value="${descriptor.getAdditionalOptions()}" style="background-color: lightgrey" readonly="true" />
+    <f:block>
+        <div class="cx-section-header">
+            Advanced Options
+        </div>
+    </f:block>
+    <f:entry title="Global Additional Arguments">
+        <f:textarea value="${descriptor.getAdditionalOptions()}" style="background-color: lightgrey" readonly="true" />
+    </f:entry>
+    <f:optionalBlock title="Use global additional arguments" inline="true"
+                     field="useOwnAdditionalOptions" negative="true"
+                     checked="${instance == null ? true : !instance.getUseOwnAdditionalOptions()}">
+        <f:entry title="Additional Arguments" field="additionalOptions">
+            <f:textarea />
         </f:entry>
-        <f:optionalBlock title="Use global additional arguments" inline="true"
-                         field="useOwnAdditionalOptions" negative="true"
-                         checked="${instance == null ? true : !instance.getUseOwnAdditionalOptions()}">
-            <f:entry title="Additional Arguments" field="additionalOptions">
-                <f:textarea />
-            </f:entry>
-        </f:optionalBlock>
-    </f:section>
+    </f:optionalBlock>
 
 </j:jelly>
