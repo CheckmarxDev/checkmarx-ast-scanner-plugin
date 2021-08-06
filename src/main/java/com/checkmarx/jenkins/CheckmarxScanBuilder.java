@@ -324,10 +324,14 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
         String defaultBranchName = getDefaultBranchName(envVars);
         scanConfig.setBranchName(defaultBranchName);
 
+        String additionalOptions;
         if (getUseOwnAdditionalOptions()) {
-            scanConfig.setAdditionalOptions(getAdditionalOptions());
+            additionalOptions = getAdditionalOptions();
         } else {
-            scanConfig.setAdditionalOptions(descriptor.getAdditionalOptions());
+            additionalOptions = descriptor.getAdditionalOptions();
+        }
+        if (fixEmptyAndTrim(additionalOptions) != null) {
+            scanConfig.setAdditionalOptions(additionalOptions);
         }
 
         File file = new File(workspace.getRemote());
@@ -339,13 +343,6 @@ public class CheckmarxScanBuilder extends Builder implements SimpleBuildStep {
 
     private CheckmarxApiToken getCheckmarxTokenCredential(Run<?, ?> run, String credentialsId) {
         return findCredentialById(credentialsId, CheckmarxApiToken.class, run);
-    }
-
-    private String cleanFilters(String filter) {
-        String cleanFilter = fixEmptyAndTrim(filter);
-        if (cleanFilter == null) return "";
-
-        return cleanFilter.replaceAll("\\s+", "");
     }
 
     @Override
